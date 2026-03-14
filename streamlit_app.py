@@ -332,7 +332,13 @@ def assessment_view():
         respuestas_mat = {}
         for i, p in enumerate(PREGUNTAS_MAT):
             st.markdown(f'<div class="pregunta-card"><b>Pregunta {i+1}:</b><br>{p["q"]}</div>', unsafe_allow_html=True)
-            respuestas_mat[i] = st.radio(f"Selecciona tu respuesta ({i+1})", p["options"], key=f"mat_{i}", index=None)
+            respuestas_mat[i] = st.radio(
+                f"Selecciona tu respuesta ({i+1})", 
+                p["options"], 
+                key=f"mat_{i}", 
+                index=None,
+                format_func=lambda x, opts=p["options"]: f"{['A', 'B', 'C', 'D'][opts.index(x)]}) {x}"
+            )
             st.markdown("<br>", unsafe_allow_html=True)
 
     with tab2:
@@ -343,7 +349,13 @@ def assessment_view():
             st.markdown(f'<div class="texto-lectura">{t["texto"]}</div>', unsafe_allow_html=True)
             for pq in t["questions"]:
                 st.markdown(f'<div class="pregunta-card"><b>Pregunta:</b> {pq["q"]}</div>', unsafe_allow_html=True)
-                respuestas_len[q_idx] = st.radio(f"Elige la opción correcta para: {pq['q'][:40]}...", pq["options"], key=f"len_{q_idx}", index=None)
+                respuestas_len[q_idx] = st.radio(
+                    f"Elige la opción correcta para: {pq['q'][:40]}...", 
+                    pq["options"], 
+                    key=f"len_{q_idx}", 
+                    index=None,
+                    format_func=lambda x, opts=pq["options"]: f"{['A', 'B', 'C', 'D'][opts.index(x)]}) {x}"
+                )
                 q_idx += 1
             st.divider()
 
