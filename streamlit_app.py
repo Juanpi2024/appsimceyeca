@@ -285,30 +285,28 @@ def login_view():
     col1, col2 = st.columns(2)
     
     with col1:
-        st.markdown('<div class="pregunta-card" style="background-color: #fff;">', unsafe_allow_html=True)
-        st.header("🏠 Acceso Alumnos")
-        nombre = st.text_input("Ingresa tu Nombre Completo", placeholder="Ej: Juan Pérez")
-        codigo = st.text_input("Código de Curso", placeholder="Ej: 4B")
-        if st.button("🚀 Comenzar Evaluación"):
-            if nombre and codigo:
-                st.session_state.user = {"nombre": nombre, "codigo": codigo}
-                st.session_state.page = 'assessment'
-                st.rerun()
-            else:
-                st.warning("Escribe tu nombre y curso para entrar")
-        st.markdown('</div>', unsafe_allow_html=True)
+        with st.container(border=True):
+            st.header("🏠 Acceso Alumnos")
+            nombre = st.text_input("Ingresa tu Nombre Completo", placeholder="Ej: Juan Pérez")
+            codigo = st.text_input("Código de Curso", placeholder="Ej: 4B")
+            if st.button("🚀 Comenzar Evaluación"):
+                if nombre and codigo:
+                    st.session_state.user = {"nombre": nombre, "codigo": codigo}
+                    st.session_state.page = 'assessment'
+                    st.rerun()
+                else:
+                    st.warning("Escribe tu nombre y curso para entrar")
                 
     with col2:
-        st.markdown('<div class="pregunta-card" style="background-color: #f1f3f4; border-color: #6c757d;">', unsafe_allow_html=True)
-        st.header("👨‍🏫 Portal Docente")
-        pass_code = st.text_input("Clave de Acceso", type="password")
-        if st.button("📊 Ver Dashboard"):
-            if pass_code == "NERUDA-4B":
-                st.session_state.page = 'admin'
-                st.rerun()
-            else:
-                st.error("Clave incorrecta")
-        st.markdown('</div>', unsafe_allow_html=True)
+        with st.container(border=True):
+            st.header("👨‍🏫 Portal Docente")
+            pass_code = st.text_input("Clave de Acceso", type="password")
+            if st.button("📊 Ver Dashboard"):
+                if pass_code == "NERUDA-4B":
+                    st.session_state.page = 'admin'
+                    st.rerun()
+                else:
+                    st.error("Clave incorrecta")
 
 def assessment_view():
     st.markdown(f'<h1 style="color: #1e7e34;">🌳 ¡Mucho éxito, {st.session_state.user["nombre"]}!</h1>', unsafe_allow_html=True)
@@ -337,8 +335,10 @@ def assessment_view():
 
     if st.button("✅ Terminar Evaluación"):
         # Verificación de completitud simple
-        if len(respuestas_mat) < len(PREGUNTAS_MAT) or len(respuestas_len) < 20: # 10 textos * 2 preguntas
-             st.warning("Asegúrate de responder todo antes de finalizar.")
+        if len([r for r in respuestas_mat.values() if r is not None]) < len(PREGUNTAS_MAT) or \
+           len([r for r in respuestas_len.values() if r is not None]) < 20: 
+             st.warning("Por favor, responde todas las preguntas antes de finalizar.")
+             return
         
         # Calcular Matemática
         correctas_mat = sum(1 for i, p in enumerate(PREGUNTAS_MAT) if respuestas_mat.get(i) == p["a"])
