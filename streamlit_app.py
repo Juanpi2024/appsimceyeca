@@ -4,46 +4,101 @@ import sqlite3
 import os
 import plotly.express as px
 from datetime import datetime
+import random
 
 # --- CONFIGURACIÓN DE PÁGINA ---
-st.set_page_config(page_title="SIMCE Simulator Premium", page_icon="📊", layout="wide")
+st.set_page_config(page_title="SIMCE Parral - Tierra de Neruda", page_icon="📝", layout="wide")
 
-# Estilos CSS personalizados para un look premium
+# Frases motivacionales de Neruda y Parral
+FRASES_MOTIVACIONALES = [
+    "“El niño que no juega no es niño, pero el hombre que no juega perdió para siempre al niño que vivía en él.” - Pablo Neruda",
+    "“Queda prohibido no sonreír a los problemas, no luchar por lo que quieres, abandonarlo todo por miedo.” - Neruda",
+    "“Si nada nos salva de la muerte, al menos que el amor nos salve de la vida.” - Neruda",
+    "¡Sigue adelante, Parralino! Tu esfuerzo es la semilla de tu futuro.",
+    "Como las parras de nuestra tierra, tú también crecerás fuerte y darás frutos."
+]
+
+# Estilos CSS con alto contraste y diseño premium para niños
 st.markdown("""
     <style>
+    /* Estilo General */
     .main {
-        background-color: #f8f9fa;
+        background-color: #ffffff;
     }
+    
+    /* Contenedores de Tarjetas con Alto Contraste */
+    .pregunta-card {
+        background-color: #f0f7ff;
+        padding: 25px;
+        border-radius: 15px;
+        margin-bottom: 25px;
+        border: 2px solid #0056b3;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        color: #000000; /* Texto Negro para máximo contraste */
+    }
+    
+    .pregunta-card b {
+        color: #004085;
+        font-size: 1.2em;
+    }
+
+    .texto-lectura {
+        background-color: #fffdf0;
+        padding: 30px;
+        border-radius: 15px;
+        margin-bottom: 25px;
+        font-family: 'Georgia', serif;
+        font-size: 1.25em;
+        line-height: 1.7;
+        color: #1a1a1a;
+        border: 2px solid #d4af37;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    }
+    
+    /* Botones Premium */
     .stButton>button {
         width: 100%;
-        border-radius: 5px;
-        height: 3em;
-        background-color: #007bff;
+        border-radius: 10px;
+        height: 3.5em;
+        background: linear-gradient(135deg, #28a745, #1e7e34); /* Verde Parral */
         color: white;
-    }
-    .stMetric {
-        background-color: #ffffff;
-        padding: 15px;
-        border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-    .pregunta-card {
-        background-color: #ffffff;
-        padding: 20px;
-        border-radius: 10px;
-        margin-bottom: 20px;
-        border-left: 5px solid #007bff;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-    .texto-lectura {
-        background-color: #fff3cd;
-        padding: 25px;
-        border-radius: 10px;
-        margin-bottom: 20px;
-        font-family: 'Georgia', serif;
+        font-weight: bold;
         font-size: 1.1em;
-        line-height: 1.6;
-        border: 1px solid #ffeeba;
+        border: none;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .stButton>button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(40, 167, 69, 0.4);
+        background: linear-gradient(135deg, #218838, #19692c);
+    }
+
+    /* Medallas y Títulos */
+    .medal-container {
+        text-align: center;
+        padding: 20px;
+        border-radius: 20px;
+        background: #f8f9fa;
+        border: 3px dashed #ffc107;
+    }
+    
+    .neruda-quote {
+        font-style: italic;
+        color: #5a5a5a;
+        text-align: center;
+        padding: 20px;
+        background-color: #e9ecef;
+        border-radius: 10px;
+        margin: 20px 0;
+        border-left: 5px solid #0056b3;
+    }
+    
+    /* Forzar visibilidad de Radio Buttons en modo oscuro si el usuario lo tiene activo */
+    .stRadio label {
+        color: #000000 !important;
+        font-weight: 500;
+        font-size: 1.1em;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -57,7 +112,6 @@ def init_db():
     
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    # Tabla de resultados
     c.execute('''CREATE TABLE IF NOT EXISTS resultados (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     nombre TEXT,
@@ -83,10 +137,15 @@ def save_result(nombre, codigo, p_mat, c_mat, p_len, c_len):
 def calcular_puntaje_simce(correctas, total):
     if total == 0: return 200
     porcentaje = correctas / total
-    # Escala lineal simple de 200 a 400
     return int(200 + (porcentaje * 200))
 
-# --- CONTENIDO: MATEMÁTICA (30 preguntas) ---
+def obtener_medalla(puntaje):
+    if puntaje >= 350: return "🥇 Oro - ¡Excelente Trabajo!", "🏆"
+    if puntaje >= 300: return "🥈 Plata - ¡Muy Bien!", "⭐"
+    if puntaje >= 250: return "🥉 Bronce - ¡Buen Esfuerzo!", "👍"
+    return "🥉 Mención - ¡Sigue Practicando!", "📖"
+
+# --- CONTENIDO --- (Se mantienen las preguntas previas)
 PREGUNTAS_MAT = [
     {"q": "¿Cuánto es 125 + 347?", "options": ["462", "472", "482", "452"], "a": "472"},
     {"q": "Si tengo 4 bolsas con 15 manzanas cada una, ¿cuántas manzanas tengo en total?", "options": ["45", "50", "60", "65"], "a": "60"},
@@ -120,7 +179,6 @@ PREGUNTAS_MAT = [
     {"q": "¿Cuál es el producto de 9 x 9?", "options": ["18", "72", "81", "90"], "a": "81"}
 ]
 
-# --- CONTENIDO: LENGUAJE (10 textos) ---
 TEXTOS_LEN = [
     {
         "titulo": "El Zorro y la Cigüeña",
@@ -221,65 +279,74 @@ def main():
         admin_view()
 
 def login_view():
-    st.title("🚀 Simulador SIMCE Premium")
+    st.markdown(f'<h1 style="text-align: center; color: #0056b3;">📝 Ensayo SIMCE Parral</h1>', unsafe_allow_html=True)
+    st.markdown(f'<div class="neruda-quote">{random.choice(FRASES_MOTIVACIONALES)}</div>', unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
     
     with col1:
-        st.header("Acceso Alumnos")
-        nombre = st.text_input("Nombre Completo")
-        codigo = st.text_input("Código de Curso (Ej: 4B)")
-        if st.button("Comenzar Evaluación"):
+        st.markdown('<div class="pregunta-card" style="background-color: #fff;">', unsafe_allow_html=True)
+        st.header("🏠 Acceso Alumnos")
+        nombre = st.text_input("Ingresa tu Nombre Completo", placeholder="Ej: Juan Pérez")
+        codigo = st.text_input("Código de Curso", placeholder="Ej: 4B")
+        if st.button("🚀 Comenzar Evaluación"):
             if nombre and codigo:
                 st.session_state.user = {"nombre": nombre, "codigo": codigo}
                 st.session_state.page = 'assessment'
                 st.rerun()
             else:
-                st.error("Por favor completa los datos")
+                st.warning("Escribe tu nombre y curso para entrar")
+        st.markdown('</div>', unsafe_allow_html=True)
                 
     with col2:
-        st.header("Portal Docente")
-        pass_code = st.text_input("Código de Profesor", type="password")
-        if st.button("Ingresar Dashboard"):
+        st.markdown('<div class="pregunta-card" style="background-color: #f1f3f4; border-color: #6c757d;">', unsafe_allow_html=True)
+        st.header("👨‍🏫 Portal Docente")
+        pass_code = st.text_input("Clave de Acceso", type="password")
+        if st.button("📊 Ver Dashboard"):
             if pass_code == "NERUDA-4B":
                 st.session_state.page = 'admin'
                 st.rerun()
             else:
-                st.error("Código incorrecto")
+                st.error("Clave incorrecta")
+        st.markdown('</div>', unsafe_allow_html=True)
 
 def assessment_view():
-    st.title(f"📖 Evaluación en curso: {st.session_state.user['nombre']}")
+    st.markdown(f'<h1 style="color: #1e7e34;">🌳 ¡Mucho éxito, {st.session_state.user["nombre"]}!</h1>', unsafe_allow_html=True)
+    st.info("Lee cada pregunta con calma. Tienes todo el apoyo de Parral.")
     
-    tab1, tab2 = st.tabs(["🔢 Matemática", "📚 Comprensión Lectora"])
+    tab1, tab2 = st.tabs(["🔢 Matemática (30 q)", "📚 Comprensión Lectora (10 textos)"])
     
     with tab1:
         respuestas_mat = {}
         for i, p in enumerate(PREGUNTAS_MAT):
-            st.markdown(f'<div class="pregunta-card"><b>Pregunta {i+1}:</b> {p["q"]}</div>', unsafe_allow_html=True)
-            respuestas_mat[i] = st.radio(f"Selecciona tu respuesta ({i+1})", p["options"], key=f"mat_{i}")
-            st.divider()
+            st.markdown(f'<div class="pregunta-card"><b>Pregunta {i+1}:</b><br>{p["q"]}</div>', unsafe_allow_html=True)
+            respuestas_mat[i] = st.radio(f"Selecciona tu respuesta ({i+1})", p["options"], key=f"mat_{i}", index=None)
+            st.markdown("<br>", unsafe_allow_html=True)
 
     with tab2:
         respuestas_len = {}
         q_idx = 0
         for i, t in enumerate(TEXTOS_LEN):
-            st.markdown(f"### {t['titulo']}")
+            st.markdown(f'<div style="text-align: center; color: #d4af37;"><h3>📜 {t["titulo"]}</h3></div>', unsafe_allow_html=True)
             st.markdown(f'<div class="texto-lectura">{t["texto"]}</div>', unsafe_allow_html=True)
             for pq in t["questions"]:
-                st.markdown(f'<b>Pregunta:</b> {pq["q"]}')
-                respuestas_len[q_idx] = st.radio(f"Respuesta para: {pq['q'][:30]}...", pq["options"], key=f"len_{q_idx}")
+                st.markdown(f'<div class="pregunta-card"><b>Pregunta:</b> {pq["q"]}</div>', unsafe_allow_html=True)
+                respuestas_len[q_idx] = st.radio(f"Elige la opción correcta para: {pq['q'][:40]}...", pq["options"], key=f"len_{q_idx}", index=None)
                 q_idx += 1
             st.divider()
 
-    if st.button("Finalizar y Ver Resultados"):
+    if st.button("✅ Terminar Evaluación"):
+        # Verificación de completitud simple
+        if len(respuestas_mat) < len(PREGUNTAS_MAT) or len(respuestas_len) < 20: # 10 textos * 2 preguntas
+             st.warning("Asegúrate de responder todo antes de finalizar.")
+        
         # Calcular Matemática
-        correctas_mat = sum(1 for i, p in enumerate(PREGUNTAS_MAT) if respuestas_mat[i] == p["a"])
+        correctas_mat = sum(1 for i, p in enumerate(PREGUNTAS_MAT) if respuestas_mat.get(i) == p["a"])
         puntaje_mat = calcular_puntaje_simce(correctas_mat, len(PREGUNTAS_MAT))
         
         # Calcular Lenguaje
-        # Mapeo plano de todas las preguntas de lenguaje para facilitar conteo
         all_len_q = [q for t in TEXTOS_LEN for q in t["questions"]]
-        correctas_len = sum(1 for i, p in enumerate(all_len_q) if respuestas_len[i] == p["a"])
+        correctas_len = sum(1 for i, p in enumerate(all_len_q) if respuestas_len.get(i) == p["a"])
         puntaje_len = calcular_puntaje_simce(correctas_len, len(all_len_q))
         
         save_result(st.session_state.user['nombre'], st.session_state.user['codigo'], 
@@ -293,24 +360,47 @@ def assessment_view():
         st.rerun()
 
 def results_view():
-    st.title("🏆 Tus Resultados")
+    st.balloons()
     res = st.session_state.final_results
+    st.markdown('<h1 style="text-align: center; color: #1e7e34;">✨ ¡Lo lograste! ✨</h1>', unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
+    
     with col1:
-        st.metric("Puntaje Matemática", f"{res['p_mat']} pts", f"{res['c_mat']}/{res['total_mat']} correctas")
-    with col2:
-        st.metric("Puntaje Comprensión Lectora", f"{res['p_len']} pts", f"{res['c_len']}/{res['total_len']} correctas")
+        medal_text, medal_emoji = obtener_medalla(res['p_mat'])
+        st.markdown(f"""
+            <div class="medal-container">
+                <h2>🔢 Matemática</h2>
+                <div style="font-size: 4em;">{medal_emoji}</div>
+                <h3>{res['p_mat']} Puntos</h3>
+                <p>{medal_text}</p>
+                <b>{res['c_mat']} de {res['total_mat']} correctas</b>
+            </div>
+        """, unsafe_allow_html=True)
         
-    st.success("¡Felicidades por completar el ensayo! Tus resultados han sido guardados.")
-    if st.button("Volver al Inicio"):
+    with col2:
+        medal_text, medal_emoji = obtener_medalla(res['p_len'])
+        st.markdown(f"""
+            <div class="medal-container">
+                <h2>📚 Lenguaje</h2>
+                <div style="font-size: 4em;">{medal_emoji}</div>
+                <h3>{res['p_len']} Puntos</h3>
+                <p>{medal_text}</p>
+                <b>{res['c_len']} de {res['total_len']} correctas</b>
+            </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown(f'<div class="neruda-quote" style="border-left: 5px solid #1e7e34;">{random.choice(FRASES_MOTIVACIONALES)}</div>', unsafe_allow_html=True)
+    
+    if st.button("🔙 Volver al Inicio"):
         st.session_state.page = 'login'
         st.rerun()
 
 def admin_view():
-    st.title("👨‍🏫 Dashboard del Profesor - Código: NERUDA-4B")
+    st.title("👨‍🏫 Panel de Control del Profesor")
+    st.write("Estadísticas de rendimiento en Parral")
     
-    if st.button("← Salir"):
+    if st.button("← Cerrar Sesión"):
         st.session_state.page = 'login'
         st.rerun()
         
@@ -319,21 +409,21 @@ def admin_view():
     conn.close()
     
     if df.empty:
-        st.info("Aún no hay resultados registrados.")
+        st.info("No hay resultados registrados aún.")
     else:
-        st.header("Resumen del Curso")
+        st.header("Rendimiento del Curso")
         c1, c2, c3 = st.columns(3)
-        c1.metric("Estudiantes Evaluados", len(df))
-        c2.metric("Promedio Matemática", f"{int(df['puntaje_mat'].mean())} pts")
-        c3.metric("Promedio Lenguaje", f"{int(df['puntaje_len'].mean())} pts")
+        c1.metric("Alumnos", len(df))
+        c2.metric("Promedio Mat", f"{int(df['puntaje_mat'].mean())} pts")
+        c3.metric("Promedio Len", f"{int(df['puntaje_len'].mean())} pts")
         
-        st.header("Gráfico de Rendimiento")
-        fig = px.scatter(df, x="puntaje_mat", y="puntaje_len", hover_data=["nombre"], 
-                        size_max=60, title="Matemática vs Lenguaje")
+        st.header("Distribución de Puntajes")
+        fig = px.histogram(df, x=["puntaje_mat", "puntaje_len"], barmode="overlay", 
+                          title="Frecuencia de Puntajes", labels={'value':'Puntaje', 'variable':'Materia'})
         st.plotly_chart(fig, use_container_width=True)
         
-        st.header("Detalle por Estudiante")
-        st.dataframe(df.style.highlight_max(axis=0, subset=["puntaje_mat", "puntaje_len"]))
+        st.header("Listado Detallado")
+        st.dataframe(df, use_container_width=True)
 
 if __name__ == "__main__":
     main()
