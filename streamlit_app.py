@@ -326,10 +326,12 @@ def assessment_view():
     st.markdown(f'<h1 style="color: #1e7e34;">🌳 ¡Mucho éxito, {st.session_state.user["nombre"]}!</h1>', unsafe_allow_html=True)
     st.info("Lee cada pregunta con calma. Tienes todo el apoyo de Parral.")
     
+    respuestas_mat = {}
+    respuestas_len = {}
+
     tab1, tab2 = st.tabs(["🔢 Matemática (30 q)", "📚 Comprensión Lectora (10 textos)"])
     
     with tab1:
-        respuestas_mat = {}
         for i, p in enumerate(PREGUNTAS_MAT):
             st.markdown(f'<div class="pregunta-card"><b>Pregunta {i+1}:</b><br>{p["q"]}</div>', unsafe_allow_html=True)
             respuestas_mat[i] = st.radio(
@@ -341,8 +343,8 @@ def assessment_view():
             )
             st.markdown("<br>", unsafe_allow_html=True)
 
+    all_len_q = [q for t in TEXTOS_LEN for q in t["questions"]]
     with tab2:
-        respuestas_len = {}
         q_idx = 0
         for i, t in enumerate(TEXTOS_LEN):
             st.markdown(f'<div style="text-align: center; color: #d4af37;"><h3>📜 {t["titulo"]}</h3></div>', unsafe_allow_html=True)
@@ -360,11 +362,17 @@ def assessment_view():
             st.divider()
 
     if st.button("✅ Terminar Evaluación"):
-        # Verificación de completitud simple
-        if len([r for r in respuestas_mat.values() if r is not None]) < len(PREGUNTAS_MAT) or \
-           len([r for r in respuestas_len.values() if r is not None]) < 20: 
-             st.warning("Por favor, responde todas las preguntas antes de finalizar.")
-             return
+        # Verificación detallada
+        faltan_mat = len(PREGUNTAS_MAT) - len([r for r in respuestas_mat.values() if r is not None])
+        faltan_len = len(all_len_q) - len([r for r in respuestas_len.values() if r is not None])
+        
+        if faltan_mat > 0 or faltan_len > 0:
+            msg = "⚠️ **Faltan preguntas por responder:**\n"
+            if faltan_mat > 0: msg += f"- Matemática: te faltan {faltan_mat} preguntas.\n"
+            if faltan_len > 0: msg += f"- Lenguaje: te faltan {faltan_len} preguntas.\n"
+            msg += "\n*Revisa las pestañas arriba para completar todo.*"
+            st.warning(msg)
+            return
         
         # Calcular Matemática
         correctas_mat = sum(1 for i, p in enumerate(PREGUNTAS_MAT) if respuestas_mat.get(i) == p["a"])
