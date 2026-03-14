@@ -9,6 +9,20 @@ import random
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(page_title="SIMCE Parral - Tierra de Neruda", page_icon="📝", layout="wide")
 
+# Helper para compatibilidad de versiones
+def safe_rerun():
+    if hasattr(st, "rerun"):
+        st.rerun()
+    else:
+        st.experimental_rerun()
+
+def safe_container(border=False):
+    # Border=True solo disponible en Streamlit >= 1.30.0
+    try:
+        return st.container(border=border)
+    except TypeError:
+        return st.container()
+
 # Frases motivacionales de Neruda y Parral
 FRASES_MOTIVACIONALES = [
     "“El niño que no juega no es niño, pero el hombre que no juega perdió para siempre al niño que vivía en él.” - Pablo Neruda",
@@ -285,7 +299,7 @@ def login_view():
     col1, col2 = st.columns(2)
     
     with col1:
-        with st.container(border=True):
+        with safe_container(border=True):
             st.header("🏠 Acceso Alumnos")
             nombre = st.text_input("Ingresa tu Nombre Completo", placeholder="Ej: Juan Pérez")
             codigo = st.text_input("Código de Curso", placeholder="Ej: 4B")
@@ -293,18 +307,18 @@ def login_view():
                 if nombre and codigo:
                     st.session_state.user = {"nombre": nombre, "codigo": codigo}
                     st.session_state.page = 'assessment'
-                    st.rerun()
+                    safe_rerun()
                 else:
                     st.warning("Escribe tu nombre y curso para entrar")
                 
     with col2:
-        with st.container(border=True):
+        with safe_container(border=True):
             st.header("👨‍🏫 Portal Docente")
             pass_code = st.text_input("Clave de Acceso", type="password")
             if st.button("📊 Ver Dashboard"):
                 if pass_code == "NERUDA-4B":
                     st.session_state.page = 'admin'
-                    st.rerun()
+                    safe_rerun()
                 else:
                     st.error("Clave incorrecta")
 
@@ -357,7 +371,7 @@ def assessment_view():
             "p_len": puntaje_len, "c_len": correctas_len, "total_len": len(all_len_q)
         }
         st.session_state.page = 'results'
-        st.rerun()
+        safe_rerun()
 
 def results_view():
     st.balloons()
@@ -394,7 +408,7 @@ def results_view():
     
     if st.button("🔙 Volver al Inicio"):
         st.session_state.page = 'login'
-        st.rerun()
+        safe_rerun()
 
 def admin_view():
     st.title("👨‍🏫 Panel de Control del Profesor")
@@ -402,7 +416,7 @@ def admin_view():
     
     if st.button("← Cerrar Sesión"):
         st.session_state.page = 'login'
-        st.rerun()
+        safe_rerun()
         
     conn = sqlite3.connect(DB_PATH)
     df = pd.read_sql_query("SELECT * FROM resultados ORDER BY fecha DESC", conn)
